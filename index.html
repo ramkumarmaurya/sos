@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITM GIDA - Campus Safety & Emergency SOS Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .pulse-animation {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(0.98);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            70% {
+                transform: scale(1.03);
+                box-shadow: 0 0 0 25px rgba(239, 68, 68, 0);
+            }
+            100% {
+                transform: scale(0.98);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col font-sans">
+
+    <!-- Universal Siren Audio Player for Mobile & Desktop -->
+    <audio id="emergencySirenAudio" loop preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Header Section -->
+    <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-white p-1 rounded-full w-10 h-10 flex items-center justify-center text-indigo-900 font-bold">
+                    ITM
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">ITM GIDA Gorakhpur</h1>
+                    <p class="text-xs text-indigo-200">Kalam Vision 2026 - Campus Safety Portal</p>
+                </div>
+            </div>
+            <span class="bg-emerald-500 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1 font-semibold">
+                <span class="w-2 h-2 bg-white rounded-full animate-ping"></span> Active
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-4xl mx-auto px-4 py-6 flex-grow w-full space-y-6">
+
+        <!-- Banner Alert -->
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r shadow-sm flex items-start gap-3">
+            <i class="fa-solid fa-triangle-exclamation text-amber-600 text-xl mt-0.5"></i>
+            <p class="text-sm text-amber-800">
+                <strong>Emergency Portal:</strong> SOS Button dabate hi mobile aur desktop dono par ekdum tez siren bajega aur live GPS location ke sath WhatsApp/Video recording ka option mil jayega.
+            </p>
+        </div>
+
+        <!-- SOS Trigger Section -->
+        <div class="bg-white rounded-2xl p-6 text-center shadow-md border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 mb-2">Emergency Assistance Needed?</h2>
+            <p class="text-slate-500 text-sm mb-6">Button dabate hi mobile/desktop par siren bajega aur location fetch hogi</p>
+            
+            <button id="sosBtn" onclick="triggerSOS()" class="pulse-animation bg-red-600 hover:bg-red-700 text-white text-2xl font-black py-8 px-10 rounded-full shadow-2xl transition transform active:scale-95 flex flex-col items-center justify-center mx-auto border-4 border-red-200">
+                <i class="fa-solid fa-bell text-4xl mb-2 animate-bounce"></i>
+                <span>TRIGGER SOS</span>
+                <span class="text-xs font-normal opacity-80 mt-1">Click to Alert Authorities</span>
+            </button>
+
+            <!-- Status Message Box -->
+            <div id="statusBox" class="mt-6 hidden p-4 rounded-lg text-sm text-left transition-all"></div>
+        </div>
+
+        <!-- Live Video & Audio Recording Section -->
+        <div class="bg-white rounded-2xl p-6 shadow-md border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-video text-red-600"></i> Live Video & Audio Recording (Evidence Proof)
+            </h3>
+            <p class="text-xs text-slate-500 mb-4">Aapaatkaal me live camera se video record karein, preview dekhein aur authorities ko WhatsApp par bhejiye.</p>
+            
+            <!-- Live Camera Preview Box -->
+            <div class="relative bg-slate-900 rounded-xl overflow-hidden mb-4 shadow-inner flex items-center justify-center aspect-video sm:aspect-[16/9] max-h-72 mx-auto">
+                <video id="cameraPreview" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                <div id="recordingBadge" class="hidden absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 animate-pulse shadow">
+                    <span class="w-2 h-2 bg-white rounded-full"></span> RECORDING LIVE...
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div class="flex items-center gap-2">
+                    <button id="startVideoBtn" onclick="startVideoRecording()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow">
+                        <i class="fa-solid fa-circle text-[10px]"></i> Start Video Recording
+                    </button>
+                    <button id="stopVideoBtn" onclick="stopVideoRecording()" disabled class="bg-slate-300 text-slate-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 cursor-not-allowed">
+                        <i class="fa-solid fa-stop"></i> Stop & Save
+                    </button>
+                </div>
+                <span id="recStatus" class="text-xs text-slate-600 font-medium">Camera is on stand-by...</span>
+            </div>
+
+            <!-- Recorded Video Playback & Share Options -->
+            <div id="videoResultBox" class="mt-4 hidden space-y-3 bg-slate-900 p-4 rounded-xl">
+                <p class="text-xs font-bold text-white">Recorded Video Preview:</p>
+                <video id="videoPlayback" controls class="w-full rounded-lg max-h-60 bg-black"></video>
+                <div class="flex flex-wrap gap-2 pt-2">
+                    <a id="downloadVideoBtn" download="ITM_Emergency_Video.webm" class="bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-lg text-xs font-bold flex items-center justify-center gap-2 flex-grow">
+                        <i class="fa-solid fa-download"></i> Download Video File
+                    </a>
+                </div>
+                <p class="text-xs font-bold text-slate-300 pt-2">Send Emergency Alert with Video Notice to Authorities:</p>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <a href="https://wa.me/917522897550?text=EMERGENCY!%20I%20have%20recorded%20an%20emergency%20video%20proof%20from%20ITM%20Campus." target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white text-center py-2 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1">
+                        <i class="fa-brands fa-whatsapp"></i> HOD Mam
+                    </a>
+                    <a href="https://wa.me/916387535309?text=EMERGENCY!%20I%20have%20recorded%20an%20emergency%20video%20proof%20from%20ITM%20Campus." target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white text-center py-2 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1">
+                        <i class="fa-brands fa-whatsapp"></i> Director Sir
+                    </a>
+                    <a href="https://wa.me/917522897550?text=EMERGENCY!%20I%20have%20recorded%20an%20emergency%20video%20proof%20from%20ITM%20Campus." target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white text-center py-2 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1">
+                        <i class="fa-brands fa-whatsapp"></i> Coordinator
+                    </a>
+                    <a href="https://wa.me/919335592500?text=EMERGENCY!%20I%20have%20recorded%20an%20emergency%20video%20proof%20from%20ITM%20Campus." target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white text-center py-2 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1">
+                        <i class="fa-brands fa-whatsapp"></i> Help Desk
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Emergency Contacts Section -->
+        <div class="bg-white rounded-2xl p-6 shadow-md border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-phone-volume text-indigo-600"></i> Campus Emergency Contacts & Messaging
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <!-- HOD Mam -->
+                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition">
+                    <div>
+                        <p class="font-bold text-slate-700 text-sm">HOD Mam</p>
+                        <p class="text-xs text-slate-500">+91 75228 97550</p>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <a href="https://wa.me/917522897550?text=EMERGENCY!%20Need%20immediate%20help%20at%20ITM%20GIDA%20Campus." target="_blank" class="bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-emerald-700">
+                            <i class="fa-brands fa-whatsapp"></i> Chat
+                        </a>
+                        <a href="tel:+917522897550" class="bg-indigo-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-indigo-700">
+                            <i class="fa-solid fa-phone"></i> Call
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Director Sir -->
+                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition">
+                    <div>
+                        <p class="font-bold text-slate-700 text-sm">Director Sir</p>
+                        <p class="text-xs text-slate-500">+91 63875 35309</p>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <a href="https://wa.me/916387535309?text=EMERGENCY!%20Urgent%20assistance%20required%20at%20ITM%20GIDA." target="_blank" class="bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-emerald-700">
+                            <i class="fa-brands fa-whatsapp"></i> Chat
+                        </a>
+                        <a href="tel:+916387535309" class="bg-indigo-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-indigo-700">
+                            <i class="fa-solid fa-phone"></i> Call
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Class Coordinator -->
+                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition">
+                    <div>
+                        <p class="font-bold text-slate-700 text-sm">Class Coordinator</p>
+                        <p class="text-xs text-slate-500">+91 75228 97550</p>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <a href="https://wa.me/917522897550?text=EMERGENCY!%20Class%20Coordinator%20assistance%20needed." target="_blank" class="bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-emerald-700">
+                            <i class="fa-brands fa-whatsapp"></i> Chat
+                        </a>
+                        <a href="tel:+917522897550" class="bg-indigo-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-indigo-700">
+                            <i class="fa-solid fa-phone"></i> Call
+                        </a>
+                    </div>
+                </div>
+
+                <!-- ITM Help Desk -->
+                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition">
+                    <div>
+                        <p class="font-bold text-slate-700 text-sm">ITM Help Desk</p>
+                        <p class="text-xs text-slate-500">+91 93355 92500</p>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <a href="https://wa.me/919335592500?text=EMERGENCY!%20ITM%20Help%20Desk%20support%20required." target="_blank" class="bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-emerald-700">
+                            <i class="fa-brands fa-whatsapp"></i> Chat
+                        </a>
+                        <a href="tel:+919335592500" class="bg-indigo-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-indigo-700">
+                            <i class="fa-solid fa-phone"></i> Call
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Emergency Category Quick Report -->
+        <div class="bg-white rounded-2xl p-6 shadow-md border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Quick Incident Type</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <button onclick="reportType('Medical Emergency')" class="p-3 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-center text-xs font-bold border border-red-200 transition flex flex-col items-center gap-2">
+                    <i class="fa-solid fa-user-doctor text-xl"></i>
+                    <span>Medical</span>
+                </button>
+                <button onclick="reportType('Ragging or Bullying')" class="p-3 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-center text-xs font-bold border border-amber-200 transition flex flex-col items-center gap-2">
+                    <i class="fa-solid fa-hand-fist text-xl"></i>
+                    <span>Ragging / Threat</span>
+                </button>
+                <button onclick="reportType('Fire / Electrical Hazard')" class="p-3 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-xl text-center text-xs font-bold border border-orange-200 transition flex flex-col items-center gap-2">
+                    <i class="fa-solid fa-fire text-xl"></i>
+                    <span>Fire Hazard</span>
+                </button>
+                <button onclick="reportType('General Incident')" class="p-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-center text-xs font-bold border border-blue-200 transition flex flex-col items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-xl"></i>
+                    <span>Other Help</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Emergency Siren Sound Toggle -->
+        <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-volume-high text-indigo-600 text-xl"></i>
+                <div>
+                    <p class="font-bold text-indigo-900 text-sm">Manual Emergency Audio Siren</p>
+                    <p class="text-xs text-indigo-700">Siren ko manually chalu ya band karne ke liye click karein</p>
+                </div>
+            </div>
+            <button id="sirenBtn" onclick="toggleSiren()" class="bg-indigo-600 text-white text-xs px-3 py-2 rounded-lg font-semibold hover:bg-indigo-700">
+                Play Sound
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-400 text-xs py-4 text-center mt-auto">
+        <p>Developed for Kalam Vision 2026 | ITM GIDA Gorakhpur</p>
+        <p class="text-slate-500 mt-1">Designed by BCA First-Year Team</p>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        let selectedCategory = "General Emergency";
+
+        function reportType(type) {
+            selectedCategory = type;
+            alert("Selected Incident Category: " + type + "\nAb 'TRIGGER SOS' button par click karein.");
+        }
+
+        // Universal Mobile & Desktop Friendly Siren Trigger
+        function triggerUniversalSiren() {
+            const sirenAudio = document.getElementById("emergencySirenAudio");
+            sirenAudio.currentTime = 0;
+            sirenAudio.play().catch(e => {
+                console.log("Audio autoplay restricted by browser, requires user interaction.");
+            });
+
+            const sirenBtn = document.getElementById("sirenBtn");
+            if (sirenBtn) {
+                sirenBtn.innerText = "Stop Siren";
+                sirenBtn.className = "bg-red-600 text-white text-xs px-3 py-2 rounded-lg font-semibold hover:bg-red-700 animate-pulse";
+            }
+        }
+
+        function triggerSOS() {
+            triggerUniversalSiren();
+
+            const statusBox = document.getElementById("statusBox");
+            statusBox.classList.remove("hidden");
+            statusBox.className = "mt-6 p-4 rounded-lg text-sm bg-blue-50 text-blue-800 border border-blue-200";
+            statusBox.innerHTML = "<i class='fa-solid fa-spinner animate-spin'></i> Universal Siren baj raha hai & Location fetch ki ja rahi hai...";
+
+            if (window.location.protocol === 'file:') {
+                setTimeout(() => {
+                    displayLocation(26.7412, 83.2845, "ITM GIDA Gorakhpur Campus (Offline Simulation)");
+                }, 800);
+            } 
+            else if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        displayLocation(position.coords.latitude, position.coords.longitude, "Live GPS Coordinates");
+                    },
+                    (error) => {
+                        displayLocation(26.7412, 83.2845, "ITM GIDA Gorakhpur Campus (Fallback)");
+                    },
+                    { enableHighAccuracy: true, timeout: 5000 }
+                );
+            } else {
+                displayLocation(26.7412, 83.2845, "ITM GIDA Gorakhpur Campus");
+            }
+        }
+
+        function displayLocation(lat, lng, locationType) {
+            const mapUrl = https://www.google.com/maps?q=${lat},${lng};
+            const time = new Date().toLocaleTimeString();
+            const whatsappText = encodeURIComponent(🚨 EMERGENCY ALERT! 🚨\nCategory: ${selectedCategory}\nTime: ${time}\nLocation: ${locationType}\nCoordinates: ${lat}, ${lng}\nLive Map: ${mapUrl});
+            const whatsappUrl = https://wa.me/?text=${whatsappText};
+
+            const statusBox = document.getElementById("statusBox");
+            statusBox.className = "mt-6 p-4 rounded-lg text-sm bg-emerald-50 text-emerald-900 border border-emerald-200 space-y-3";
+            statusBox.innerHTML = `
+                <div class="flex items-center gap-2 font-bold text-emerald-700 text-base">
+                    <i class="fa-solid fa-circle-check"></i> SOS ALERT TRIGGERED & SIREN ACTIVE!
+                </div>
+                <p><strong>Incident Category:</strong> ${selectedCategory}</p>
+                <p><strong>Time:</strong> ${time}</p>
+                <p><strong>Location Mode:</strong> ${locationType}</p>
+                <p><strong>GPS Coordinates:</strong> ${lat}, ${lng}</p>
+                <div class="flex flex-wrap gap-2 pt-2">
+                    <a href="${mapUrl}" target="_blank" class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 shadow">
+                        <i class="fa-solid fa-map-location-dot"></i> Open Map
+                    </a>
+                    <a href="${whatsappUrl}" target="_blank" class="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-700 shadow">
+                        <i class="fa-brands fa-whatsapp"></i> Share Location on WhatsApp
+                    </a>
+                </div>
+            `;
+        }
+
+        // Live Video and Audio Recorder Logic
+        let mediaRecorder;
+        let recordedChunks = [];
+        let cameraStream = null;
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                const cameraPreview = document.getElementById("cameraPreview");
+                cameraPreview.srcObject = cameraStream;
+            } catch (err) {
+                document.getElementById("recStatus").innerText = "Camera access denied or unavailable.";
+            }
+        });
+
+        async function startVideoRecording() {
+            try {
+                if (!cameraStream) {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    document.getElementById("cameraPreview").srcObject = cameraStream;
+                }
+
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(cameraStream, { mimeType: 'video/webm' });
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const videoUrl = URL.createObjectURL(blob);
+                    
+                    const videoPlayback = document.getElementById("videoPlayback");
+                    videoPlayback.src = videoUrl;
+
+                    const downloadBtn = document.getElementById("downloadVideoBtn");
+                    downloadBtn.href = videoUrl;
+
+                    document.getElementById("videoResultBox").classList.remove("hidden");
+                    document.getElementById("recStatus").innerText = "Video recorded & saved successfully!";
+                };
+
+                mediaRecorder.start();
+                
+                document.getElementById("startVideoBtn").disabled = true;
+                document.getElementById("startVideoBtn").className = "bg-slate-300 text-slate-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 cursor-not-allowed";
+                
+                document.getElementById("stopVideoBtn").disabled = false;
+                document.getElementById("stopVideoBtn").className = "bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow";
+                
+                document.getElementById("recordingBadge").classList.remove("hidden");
+                document.getElementById("recStatus").innerText = "Recording live video & audio...";
+                document.getElementById("videoResultBox").classList.add("hidden");
+
+            } catch (err) {
+                alert("Camera ya Microphone ki permission nahi mili. Kripya browser settings check karein.");
+            }
+        }
+
+        fn stopVideoRecording() {
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop();
+            }
+
+            document.getElementById("startVideoBtn").disabled = false;
+            document.getElementById("startVideoBtn").className = "bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow";
+
+            document.getElementById("stopVideoBtn").disabled = true;
+            document.getElementById("stopVideoBtn").className = "bg-slate-300 text-slate-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 cursor-not-allowed";
+
+            document.getElementById("recordingBadge").classList.add("hidden");
+        }
+
+        // Manual Siren Toggle Button Logic
+        let isSirenPlaying = false;
+        function toggleSiren() {
+            const sirenAudio = document.getElementById("emergencySirenAudio");
+            const sirenBtn = document.getElementById("sirenBtn");
+            
+            if (!isSirenPlaying) {
+                sirenAudio.currentTime = 0;
+                sirenAudio.play().then(() => {
+                    isSirenPlaying = true;
+                    sirenBtn.innerText = "Stop Sound";
+                    sirenBtn.className = "bg-red-600 text-white text-xs px-3 py-2 rounded-lg font-semibold hover:bg-red-700 animate-pulse";
+                }).catch(e => {
+                    alert("Audio play karne ke liye page par pehle click karein.");
+                });
+            } else {
+                sirenAudio.pause();
+                sirenAudio.currentTime = 0;
+                isSirenPlaying = false;
+                sirenBtn.innerText = "Play Sound";
+                sirenBtn.className = "bg-indigo-600 text-white text-xs px-3 py-2 rounded-lg font-semibold hover:bg-indigo-700 animate-none";
+            }
+        }
+    </script>
+</body>
+</html>
